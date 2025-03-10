@@ -143,8 +143,7 @@ void MeshRead(Mesh* mesh, Stream stream) {
 	char token[256];
 
 
-	StreamReadToken(stream); 
-
+ 
 	strcpy_s(token, sizeof(token), StreamReadToken(stream));
 
 	if (strcmp(token, "Mesh") != 0) {
@@ -152,19 +151,20 @@ void MeshRead(Mesh* mesh, Stream stream) {
 		return;
 	}
 
-	StreamReadToken(stream); 
-	strcpy_s(mesh->name, sizeof(mesh->name), token);
+	
+	strcpy_s(mesh->name, sizeof(mesh->name), StreamReadToken(stream));
 
 	int numVertices = StreamReadInt(stream);
 
-
+	DGL_Graphics_StartMesh();
 	for (int i = 0; i < numVertices; ++i) {
 		StreamReadVector2D(stream, &position);
 		StreamReadColor(stream, &color);
 		StreamReadVector2D(stream, &uv);
-
 		DGL_Graphics_AddVertex(&position, &color, &uv);
 	}
+	mesh->meshResource = DGL_Graphics_EndMesh();
+
 }
 
 

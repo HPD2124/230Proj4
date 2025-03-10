@@ -87,9 +87,9 @@ void SpriteRead(Sprite* sprite, Stream stream) {
 		strcpy_s(meshName, sizeof(meshName),token);
 
 		const Mesh* mesh = MeshLibraryBuild(meshName); 
-		if (mesh) {
-			SpriteSetMesh(sprite, mesh);
-		}
+		
+		SpriteSetMesh(sprite, mesh);
+		
 	}
 }
 
