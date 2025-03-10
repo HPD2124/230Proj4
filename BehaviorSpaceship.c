@@ -18,68 +18,71 @@
 #include "EntityContainer.h"
 #include "Trace.h"
 #include "EntityFactory.h"
+#include "BehaviorSpaceship.h"
+#include <math.h>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 
-//------------------------------------------------------------------------------
-// Private Constants:
-//------------------------------------------------------------------------------
-static const float spaceshipAcceleration = 150.0f;
-static const float spaceshipSpeedMax = 500.0f;
-static const float spaceshipTurnRateMax = 3.14159f / 1.5f;
-static const float spaceshipWeaponCooldownTime = 0.034f;
-static const float spaceshipWeaponBulletSpeed = 750.0f;
-//------------------------------------------------------------------------------
-// Private Structures:
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Public Variables:
-//------------------------------------------------------------------------------
-EntityContainer* container;
-//------------------------------------------------------------------------------
-// Private Variables:
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Private Function Declarations:
-//------------------------------------------------------------------------------
-static void BehaviorSpaceshiponInit(Behavior* behavior);
-static void BehaviorSpaceshiponUpdate(Behavior* behavior, float dt);
-static void BehaviorSpaceshiponExit(Behavior* behavior);
-static void BehaviorSpaceshipUpdateRotation(Behavior* behavior, float dt);
-static void BehaviorSpaceshipUpdateVelocity(Behavior* behavior, float dt);
-static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt);
-static void BehaviorSpaceshipSpawnBullet(Behavior* behavior);
-//------------------------------------------------------------------------------
-// Public Functions:
-//------------------------------------------------------------------------------
 typedef enum {
     cSpaceshipInvalid = -1,
     cSpaceshipIdle,
     cSpaceshipThrust
 } SpaceshipState;
 
+//------------------------------------------------------------------------------
+// Private Constants:
+//------------------------------------------------------------------------------
+static const float spaceshipAcceleration = 150.0f;
+static const float spaceshipSpeedMax = 500.0f;
+static const float spaceshipTurnRateMax = (float)(M_PI / 1.5f);
+
+static const float spaceshipWeaponCooldownTime = 0.034f;
+static const float spaceshipWeaponBulletSpeed = 750.0f;
+
+//------------------------------------------------------------------------------
+// Private Function Declarations:
+//------------------------------------------------------------------------------
+static void BehaviorSpaceshipOnInit(Behavior* behavior);
+static void BehaviorSpaceshipOnUpdate(Behavior* behavior, float dt);
+static void BehaviorSpaceshipOnExit(Behavior* behavior);
+static void BehaviorSpaceshipUpdateRotation(Behavior* behavior, float dt);
+static void BehaviorSpaceshipUpdateVelocity(Behavior* behavior, float dt);
+static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt);
+static void BehaviorSpaceshipSpawnBullet(Behavior* behavior);
+
+//------------------------------------------------------------------------------
+// Public Variables:
+//------------------------------------------------------------------------------
+EntityContainer* container;
+
+//------------------------------------------------------------------------------
+// Public Functions:
+//------------------------------------------------------------------------------
+
 Behavior* BehaviorSpaceshipCreate(void) {
-    Behavior* newSpaceship = (Behavior*)calloc(1, sizeof(Behavior));
-    if (!newSpaceship) {
+    Behavior* Spaceship = (Behavior*)calloc(1, sizeof(Behavior));
+    if (!Spaceship) {
         return NULL;
     }
 
-    newSpaceship->stateCurr = cSpaceshipInvalid;
-    newSpaceship->stateNext = cSpaceshipInvalid;
-    newSpaceship->onInit = BehaviorSpaceshiponInit;
-    newSpaceship->onUpdate = BehaviorSpaceshiponUpdate;
-    newSpaceship->onExit = BehaviorSpaceshiponExit;
+    Spaceship->stateCurr = cSpaceshipInvalid;
+    Spaceship->stateNext = cSpaceshipInvalid;
+    Spaceship->onInit = BehaviorSpaceshipOnInit;
+    Spaceship->onUpdate = BehaviorSpaceshipOnUpdate;
+    Spaceship->onExit = BehaviorSpaceshipOnExit;
 
-    return newSpaceship;
+    return Spaceship;
 }
-static void BehaviorSpaceshiponInit(Behavior* behavior) {
+
+static void BehaviorSpaceshipOnInit(Behavior* behavior) {
     UNREFERENCED_PARAMETER(behavior);
 }
-// Update the ...
-// Params:
-//	 dt = Change in time (in seconds) since the last game loop.
-static void BehaviorSpaceshiponUpdate(Behavior* behavior, float dt) {
+
+static void BehaviorSpaceshipOnUpdate(Behavior* behavior, float dt) {
+    UNREFERENCED_PARAMETER(dt);
+    behavior->stateCurr = behavior->stateNext;
     switch (behavior->stateCurr) {
     case cSpaceshipIdle:
         BehaviorSpaceshipUpdateRotation(behavior, dt);
@@ -96,69 +99,59 @@ static void BehaviorSpaceshiponUpdate(Behavior* behavior, float dt) {
             behavior->stateNext = cSpaceshipIdle;
         }
         break;
+    default:
+        break;
+
     }
 }
 
-// Shutdown the ...
-static void BehaviorSpaceshiponExit(Behavior* behavior) {
+static void BehaviorSpaceshipOnExit(Behavior* behavior) {
     UNREFERENCED_PARAMETER(behavior);
 }
+
 static void BehaviorSpaceshipUpdateRotation(Behavior* behavior, float dt) {
-    UNREFERENCED_PARAMETER(behavior);
-    Entity* spaceship = EntityContainerFindByName(container, "Spaceship");
+    UNREFERENCED_PARAMETER(dt);
+    Physics* phys = EntityGetPhysics(behavior->parent);
+    if (!phys) return;
 
-    if (spaceship) {
-        Transform* spaceshipTransform = EntityGetTransform(spaceship);
 
-        if (spaceshipTransform) {
-            if (DGL_Input_KeyDown(VK_LEFT)) {
-                TransformSetRotation(spaceshipTransform, spaceshipTurnRateMax * dt);
-            }
-            else if (DGL_Input_KeyDown(VK_RIGHT)) {
-                TransformSetRotation(spaceshipTransform, -spaceshipTurnRateMax * dt);
-            }
-            else {
-                TransformSetRotation(spaceshipTransform, 0);
-            }
-        }
+
+    if (DGL_Input_KeyDown(VK_LEFT)) {
+        PhysicsSetRotationalVelocity(phys, spaceshipTurnRateMax);
+    }
+    else if (DGL_Input_KeyDown(VK_RIGHT)) {
+        PhysicsSetRotationalVelocity(phys, -spaceshipTurnRateMax);
+    }
+    else {
+        PhysicsSetRotationalVelocity(phys, 0);
     }
 }
 
-
-
-
-
-void BehaviorSpaceshipUpdateVelocity(Behavior* behavior, float dt) {
-    UNREFERENCED_PARAMETER(dt);
-
+static void BehaviorSpaceshipUpdateVelocity(Behavior* behavior, float dt) {
     Transform* transform = EntityGetTransform(behavior->parent);
     Physics* phys = EntityGetPhysics(behavior->parent);
 
     if (!transform || !phys) return;
 
     float spaceshipRotation = TransformGetRotation(transform);
+    Vector2D rotation2D;
+    Vector2DFromAngleRad(&rotation2D, spaceshipRotation);
+    Vector2DNormalize(&rotation2D, &rotation2D);
 
-    Vector2D direction;
-    Vector2DFromAngleRad(&direction, spaceshipRotation);
+    Vector2D velocity;
+    velocity = *PhysicsGetVelocity(phys);
 
-    const Vector2D* velocity = PhysicsGetVelocity(phys);
-    Vector2DScaleAdd((Vector2D*)velocity, velocity, spaceshipAcceleration, &direction);
+    float accel = spaceshipAcceleration * dt;
+    Vector2DScale(&rotation2D, &rotation2D, accel);
+    Vector2DAdd(&velocity, &velocity, &rotation2D);
 
-
-
-    float speed = Vector2DLength(velocity);
-
-   
+    float speed = Vector2DLength(&velocity);
     if (speed > spaceshipSpeedMax) {
-      
-        Vector2D* modifiableVelocity = (Vector2D*)velocity;
-        Vector2DScale(modifiableVelocity, &direction, spaceshipSpeedMax / speed);
+        Vector2DScale(&velocity, &velocity, spaceshipSpeedMax / speed);
     }
-    
 
+    PhysicsSetVelocity(phys, &velocity);
 }
-
-
 
 static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt) {
     if (behavior->timer > 0) {
@@ -167,7 +160,6 @@ static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt) {
             behavior->timer = 0;
         }
     }
-
     if (DGL_Input_KeyDown(' ')) {
         if (behavior->timer <= 0) {
             BehaviorSpaceshipSpawnBullet(behavior);
@@ -175,57 +167,28 @@ static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt) {
         }
     }
 }
+
 static void BehaviorSpaceshipSpawnBullet(Behavior* behavior) {
     UNREFERENCED_PARAMETER(behavior);
-
-
     Entity* bullet = EntityFactoryBuild("Bullet");
     if (!bullet) return;
 
-
-
     Entity* spaceship = EntityContainerFindByName(container, "Spaceship");
-    if (!spaceship) {
-        TraceMessage("BehaviorSpaceshipSpawnBullet: Unable to find spaceship entity.");
-        return;
-    }
-
+    if (!spaceship) return;
 
     Transform* spaceshipTransform = EntityGetTransform(spaceship);
-    if (!spaceshipTransform) {
-        TraceMessage("BehaviorSpaceshipSpawnBullet: Unable to find spaceship transform.");
-        return;
-    }
-
-
     float spaceshipRotation = TransformGetRotation(spaceshipTransform);
-
-
     Transform* bulletTransform = TransformClone(spaceshipTransform);
     TransformSetTranslation(bulletTransform, TransformGetTranslation(spaceshipTransform));
     TransformSetRotation(bulletTransform, spaceshipRotation);
 
-
     Physics* bulletPhysics = EntityGetPhysics(bullet);
-    if (!bulletPhysics) {
-        TraceMessage("BehaviorSpaceshipSpawnBullet: Unable to find bullet physics.");
-        return;
-    }
-
-
     Vector2D direction;
-    Vector2DFromAngleDeg(&direction, spaceshipRotation);
+    Vector2DFromAngleRad(&direction, spaceshipRotation);
 
-    const Vector2D* velocity = PhysicsGetVelocity(bulletPhysics);
-    Vector2DScale((Vector2D*)velocity, velocity, spaceshipWeaponBulletSpeed);
-
+    Vector2D velocity;
+    Vector2DScale(&velocity, &direction, spaceshipWeaponBulletSpeed);
+    PhysicsSetVelocity(bulletPhysics, &velocity);
 
     EntityContainerAddEntity(container, bullet);
 }
-
-
-
-//------------------------------------------------------------------------------
-// Private Functions:
-//------------------------------------------------------------------------------
-

@@ -70,7 +70,7 @@ void EntityContainerFree(EntityContainer** entities) {
 }
 
 bool EntityContainerAddEntity(EntityContainer* container, Entity* entity) {
-    if (!container || !entity || container->entityCount >= container->entityMax) {
+    if (!container || !entity) {
         return false;
     }
     container->entities[container->entityCount++] = entity;

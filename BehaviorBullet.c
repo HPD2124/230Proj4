@@ -69,6 +69,7 @@ void BehaviorBulletUpdate(Behavior* behavior, float dt) {
     switch (behavior->stateCurr) {
     case cBulletIdle:
         BehaviorBulletUpdateLifeTimer(behavior, dt);
+    
         break;
     default:
         break;

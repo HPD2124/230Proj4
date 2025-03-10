@@ -53,25 +53,27 @@ Behavior* BehaviorClone(Behavior* other)
 {
     if (other == NULL)
     {
-        return NULL;  
+        return NULL;
     }
 
-    Behavior* clone = (Behavior*)malloc(sizeof(Behavior));
+    Behavior* clone = (Behavior*)calloc(1, sizeof(Behavior));  
     if (clone == NULL)
     {
-        return NULL;  
+        return NULL;
     }
 
-    clone->parent = other->parent;           
-    clone->stateCurr = other->stateCurr;     
-    clone->stateNext = other->stateNext;    
-    clone->onInit = other->onInit;            
+    // Copy data
+    clone->parent = other->parent;
+    clone->stateCurr = other->stateCurr;
+    clone->stateNext = other->stateNext;
+    clone->onInit = other->onInit;
     clone->onUpdate = other->onUpdate;
     clone->onExit = other->onExit;
-    clone->timer = other->timer;            
+    clone->timer = other->timer;
 
-    return clone; 
+    return clone;
 }
+
 void BehaviorFree(Behavior** behavior)
 {
  
@@ -103,31 +105,32 @@ void BehaviorSetParent(Behavior* behavior, Entity* parent)
         behavior->parent = parent;  
     }
 }
-void BehaviorUpdate(Behavior* behavior, float dt)
-{
-    UNREFERENCED_PARAMETER(dt);
-    if (behavior == NULL)
-    {
-        return;  
+void BehaviorUpdate(Behavior* behavior, float dt) {
+    if (!behavior) {
+        return;
     }
 
 
-    if (behavior->timer > 0)
-    {
-        behavior->timer -= dt; 
-        if (behavior->timer < 0)
-        {
-            behavior->timer = 0; 
+    if (behavior->stateCurr != behavior->stateNext) {
+
+        if (behavior->onExit) {
+            behavior->onExit(behavior);
+        }
+
+
+        behavior->stateCurr = behavior->stateNext;
+
+     
+        if (behavior->onInit) {
+            behavior->onInit(behavior);
         }
     }
 
-
-    if (behavior->onUpdate != NULL)
-    {
-        behavior->onUpdate(behavior, dt); 
+  
+    if (behavior->onUpdate) {
+        behavior->onUpdate(behavior, dt);
     }
 }
-
 
 //------------------------------------------------------------------------------
 // Private Functions:

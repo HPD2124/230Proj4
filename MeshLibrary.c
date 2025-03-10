@@ -67,7 +67,8 @@ static const Mesh* MeshLibraryFind(const char* meshName) {
 }
 static void MeshLibraryAdd(const Mesh* mesh) {
     if (meshLibrary.meshCount < MESH_LIST_SIZE) {
-        meshLibrary.meshList[meshLibrary.meshCount++] = mesh;
+        meshLibrary.meshList[meshLibrary.meshCount] = mesh;
+        meshLibrary.meshCount++;
     }
 }
 
