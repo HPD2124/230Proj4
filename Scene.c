@@ -160,9 +160,9 @@ void SceneRestart(void)
 
 
 void SceneAddEntity(Entity* entity) {
-	/*if (!entities) {
+	if (!entities) {
 		entities = EntityContainerCreate();
-	}*/
+	}
 	EntityContainerAddEntity(entities, entity);
 }
 

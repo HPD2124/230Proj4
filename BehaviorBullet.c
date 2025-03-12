@@ -81,7 +81,7 @@ void BehaviorBulletExit(Behavior* behavior) {
 }
 static void BehaviorBulletUpdateLifeTimer(Behavior* behavior, float dt) {
     if (behavior->timer > 0) {
-        behavior->timer -= dt;
+        behavior->timer =- dt;
         if (behavior->timer <= 0) {
             EntityDestroy(behavior->parent);
         }

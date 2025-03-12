@@ -88,6 +88,7 @@ static void AsteroidsSceneLoad(void)
 // Initialize the entities and variables used by the scene.
 static void AsteroidsSceneInit()
 {
+	
 	DGL_Graphics_SetBackgroundColor(&(DGL_Color) { 0.0f, 0.0f, 0.0f, 0.0f });
 	DGL_Graphics_SetBlendMode(DGL_BM_BLEND);
 	Entity* spaceship = EntityFactoryBuild("Spaceship");

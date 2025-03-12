@@ -19,6 +19,7 @@
 #include "Trace.h"
 #include "EntityFactory.h"
 #include "BehaviorSpaceship.h"
+#include "Scene.h"
 #include <math.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -55,7 +56,7 @@ static void BehaviorSpaceshipSpawnBullet(Behavior* behavior);
 //------------------------------------------------------------------------------
 // Public Variables:
 //------------------------------------------------------------------------------
-EntityContainer* container;
+EntityContainer* entities;
 
 //------------------------------------------------------------------------------
 // Public Functions:
@@ -160,7 +161,7 @@ static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt) {
             behavior->timer = 0;
         }
     }
-    if (DGL_Input_KeyDown(' ')) {
+     if (DGL_Input_KeyDown(VK_SPACE)) {
         if (behavior->timer <= 0) {
             BehaviorSpaceshipSpawnBullet(behavior);
             behavior->timer = spaceshipWeaponCooldownTime;
@@ -169,26 +170,27 @@ static void BehaviorSpaceshipUpdateWeapon(Behavior* behavior, float dt) {
 }
 
 static void BehaviorSpaceshipSpawnBullet(Behavior* behavior) {
-    UNREFERENCED_PARAMETER(behavior);
+    if (!behavior) return;
+    Physics* phys = EntityGetPhysics(behavior->parent);
+    Transform* transform = EntityGetTransform(behavior->parent);
     Entity* bullet = EntityFactoryBuild("Bullet");
-    if (!bullet) return;
 
-    Entity* spaceship = EntityContainerFindByName(container, "Spaceship");
-    if (!spaceship) return;
+    if (bullet && phys && transform) {
+        Vector2D position = *TransformGetTranslation(transform);
+        float rotation = TransformGetRotation(transform);
 
-    Transform* spaceshipTransform = EntityGetTransform(spaceship);
-    float spaceshipRotation = TransformGetRotation(spaceshipTransform);
-    Transform* bulletTransform = TransformClone(spaceshipTransform);
-    TransformSetTranslation(bulletTransform, TransformGetTranslation(spaceshipTransform));
-    TransformSetRotation(bulletTransform, spaceshipRotation);
+        TransformSetTranslation(EntityGetTransform(bullet), &position);
+        TransformSetRotation(EntityGetTransform(bullet), rotation);
 
-    Physics* bulletPhysics = EntityGetPhysics(bullet);
-    Vector2D direction;
-    Vector2DFromAngleRad(&direction, spaceshipRotation);
+        Vector2D rotationUnit = { 0,0 };
+        Vector2DFromAngleRad(&rotationUnit, rotation);
 
-    Vector2D velocity;
-    Vector2DScale(&velocity, &direction, spaceshipWeaponBulletSpeed);
-    PhysicsSetVelocity(bulletPhysics, &velocity);
+        Vector2D velocity = { 0,0 };
+        Vector2DScale(&velocity, &rotationUnit, spaceshipWeaponBulletSpeed);
 
-    EntityContainerAddEntity(container, bullet);
+        PhysicsSetVelocity(EntityGetPhysics(bullet), &velocity);
+
+        SceneAddEntity(bullet);
+    }
 }
+

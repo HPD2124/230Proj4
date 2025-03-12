@@ -233,6 +233,10 @@ Entity* EntityClone(const Entity* other) {
         Animation* clonedAnimation = AnimationClone(other->animation);
         EntityAddAnimation(clone, clonedAnimation);
     }
+    if (other->behavior) {
+        Behavior* clonedBehavior = BehaviorClone(other->behavior);
+        EntityAddBehavior(clone, clonedBehavior);
+    }
 
     return clone;
 }

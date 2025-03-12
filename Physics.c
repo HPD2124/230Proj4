@@ -89,18 +89,19 @@ void PhysicsSetVelocity(Physics* physics, const Vector2D* velocity) {
 void PhysicsUpdate(Physics* physics, Transform* transform, float dt) {
     if (physics && transform) {
         Vector2D newTranslation = { 0, 0 };
+        float newRotation = 0.0f;
 
+        newRotation = TransformGetRotation(transform) + (physics->rotationalVelocity * dt);
+        TransformSetRotation(transform, newRotation);
 
         physics->oldTranslation = *TransformGetTranslation(transform);
 
 
         Vector2DScaleAdd(&(physics->velocity), &(physics->acceleration), dt, &(physics->velocity));
+        Vector2DScale(&physics->velocity, &physics->velocity, 0.99f);
         Vector2DScaleAdd(&newTranslation, &(physics->velocity), dt, &(physics->oldTranslation));
         TransformSetTranslation(transform, &newTranslation);
-
-
-        float newRotation = TransformGetRotation(transform) + (physics->rotationalVelocity * dt);
-        TransformSetRotation(transform, newRotation);
+        
     }
 }
 
